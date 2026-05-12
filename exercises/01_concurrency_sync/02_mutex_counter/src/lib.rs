@@ -49,7 +49,24 @@ pub fn concurrent_collect(n_threads: usize) -> Vec<usize> {
     // TODO: Create Arc<Mutex<Vec<usize>>>
     // TODO: Each thread pushes its own id
     // TODO: After joining all threads, sort the result and return
-    todo!()
+    let shared_vec = Arc::new(Mutex::new(vec![]));
+    let mut handle_vec = vec![];
+    for id in 0..n_threads {
+        let shared_vec = Arc::clone(&shared_vec);
+        handle_vec.push(thread::spawn(move || {
+            let mut vec = shared_vec.lock().unwrap();
+            (*vec).push(id);
+        }));
+    }
+
+    handle_vec
+        .into_iter()
+        .for_each(|handle| handle.join().unwrap());
+
+    let mut vec = shared_vec.lock().unwrap();
+    (*vec).sort();
+    let return_vec = (*vec).clone();
+    return_vec
 }
 
 #[cfg(test)]
