@@ -211,7 +211,12 @@ thread_local! {
 /// Hint: Use `THREAD_COUNT.with(|cell| { ... })` to access the thread‑local variable.
 pub fn increment_thread_local() -> usize {
     // TODO: Use THREAD_COUNT.with to increment and return the new count
-    todo!()
+    let mut return_value = 0;
+    THREAD_COUNT.with(|value| {
+        (*value.borrow_mut()) += 1;
+        return_value = *value.borrow();
+    });
+    return_value
 }
 
 /// Spawn two threads using a **scoped thread** to compute the sum of two slices without moving ownership.
