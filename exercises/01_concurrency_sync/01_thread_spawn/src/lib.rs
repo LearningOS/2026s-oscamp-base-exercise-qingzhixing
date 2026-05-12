@@ -35,6 +35,7 @@
 use std::cell::RefCell;
 #[allow(unused_imports)]
 use std::thread;
+use std::thread::Builder;
 #[allow(unused_imports)]
 use std::time::Duration;
 
@@ -188,7 +189,14 @@ pub fn named_sleeper(value: i32, ms: u64) -> i32 {
     // TODO: Create a thread builder with name "sleeper"
     // TODO: Spawn a thread that sleeps for `ms` milliseconds and returns `value`
     // TODO: Join the thread and return the value
-    todo!()
+    let builder = Builder::new().name("sleeper".to_string());
+    let handle = builder
+        .spawn(move || {
+            thread::sleep(Duration::from_millis(ms));
+            value
+        })
+        .unwrap();
+    handle.join().unwrap()
 }
 
 thread_local! {
