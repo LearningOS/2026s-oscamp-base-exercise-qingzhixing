@@ -212,9 +212,9 @@ thread_local! {
 pub fn increment_thread_local() -> usize {
     // TODO: Use THREAD_COUNT.with to increment and return the new count
     let mut return_value = 0;
-    THREAD_COUNT.with(|value| {
-        (*value.borrow_mut()) += 1;
-        return_value = *value.borrow();
+    THREAD_COUNT.with(|cell| {
+        (*cell.borrow_mut()) += 1;
+        return_value = *cell.borrow();
     });
     return_value
 }
