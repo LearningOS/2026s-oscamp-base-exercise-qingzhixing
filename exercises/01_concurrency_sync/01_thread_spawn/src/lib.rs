@@ -232,7 +232,11 @@ pub fn scoped_slice_sum(a: &[i32], b: &[i32]) -> (i32, i32) {
     // TODO: Use thread::scope to spawn two threads
     // TODO: Each thread sums its slice
     // TODO: Wait for both threads and return the results
-    todo!()
+    thread::scope(|scope| {
+        let handle_a = scope.spawn(|| a.iter().sum());
+        let handle_b = scope.spawn(|| b.iter().sum());
+        (handle_a.join().unwrap(), handle_b.join().unwrap())
+    })
 }
 
 /// Handle a possible panic in a spawned thread.
