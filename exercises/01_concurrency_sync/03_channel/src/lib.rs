@@ -21,8 +21,6 @@ pub fn simple_send_recv(items: Vec<String>) -> Vec<String> {
     let (sender, receiver) = mpsc::channel::<String>();
     let mut handle_vec = vec![];
 
-    let item_length = items.len();
-
     for item in items {
         let thread_sender = sender.clone();
         handle_vec.push(thread::spawn(move || {
@@ -30,14 +28,16 @@ pub fn simple_send_recv(items: Vec<String>) -> Vec<String> {
         }));
     }
 
+    drop(sender);
+
     handle_vec
         .into_iter()
         .for_each(|handle| handle.join().unwrap());
 
     let mut return_vec = vec![];
 
-    for _ in 0..item_length {
-        return_vec.push(receiver.recv().unwrap());
+    while let Ok(string) = receiver.recv() {
+        return_vec.push(string);
     }
 
     return_vec
