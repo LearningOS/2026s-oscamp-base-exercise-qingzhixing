@@ -136,7 +136,11 @@ pub fn get_exit_code(command: &str) -> i32 {
     // TODO: Use Command::new("sh").args(["-c", command])
     // TODO: Execute and get status
     // TODO: Return exit code
-    todo!()
+    let status = Command::new("sh")
+        .args(["-c", command])
+        .status()
+        .expect("Failed to get sh process status");
+    status.code().expect("Failed to get exit code")
 }
 
 /// Execute the given shell command and return its stdout output as a `Result`.
