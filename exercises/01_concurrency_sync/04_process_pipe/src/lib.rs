@@ -167,7 +167,9 @@ pub fn run_command_with_result(program: &str, args: &[&str]) -> io::Result<Strin
     // TODO: Set stdout to Stdio::piped()
     // TODO: Execute with .output() and handle Result
     // TODO: Convert stdout to String with from_utf8, mapping errors to io::Error
-    todo!()
+    let child_process = Command::new(program).args(args).output()?;
+    Ok(String::from_utf8(child_process.stdout)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "output is not utf8"))?)
 }
 
 /// Interact with `grep` via bidirectional pipes, filtering lines that contain a pattern.
