@@ -94,7 +94,28 @@ pub fn pipe_through_cat(input: &str) -> String {
     // TODO: Write input to child process stdin
     // TODO: Drop stdin to close pipe (otherwise cat won't exit)
     // TODO: Read output from child process stdout
-    todo!()
+    let mut command = Command::new("cat")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Faild to create cat process");
+
+    let mut stdin = command.stdin.take().expect("Faild to take stdin");
+    stdin
+        .write_all(input.as_bytes())
+        .expect("Faild to write to stdin");
+
+    // 关闭stdin写端并向其发送EOF，避免cat无限等待
+    drop(stdin);
+
+    let mut stdout = command.stdout.take().expect("Failed to take stdout");
+    let mut output = String::new();
+    stdout
+        .read_to_string(&mut output)
+        .expect("Faild to read stdout");
+
+    command.wait().expect("Faild to wait cat process");
+    output
 }
 
 /// Get child process exit code.
