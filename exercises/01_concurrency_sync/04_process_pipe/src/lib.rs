@@ -53,7 +53,12 @@ pub fn run_command(program: &str, args: &[&str]) -> String {
     // TODO: Set stdout to Stdio::piped()
     // TODO: Execute with .output() and get output
     // TODO: Convert stdout to String and return
-    todo!()
+    let output = Command::new(program)
+        .args(args)
+        .stdout(Stdio::piped())
+        .output()
+        .expect("Failed to execute process");
+    String::from_utf8(output.stdout).expect("Faild to convert output to String")
 }
 
 /// Write data to child process (cat) stdin via pipe and read its stdout output.
