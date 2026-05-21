@@ -58,7 +58,7 @@ pub fn run_command(program: &str, args: &[&str]) -> String {
         .stdout(Stdio::piped())
         .output()
         .expect("Failed to execute process");
-    String::from_utf8(output.stdout).expect("Faild to convert output to String")
+    String::from_utf8(output.stdout).expect("Failed to convert output to String")
 }
 
 /// Write data to child process (cat) stdin via pipe and read its stdout output.
@@ -98,12 +98,12 @@ pub fn pipe_through_cat(input: &str) -> String {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
-        .expect("Faild to create cat process");
+        .expect("Failed to create cat process");
 
-    let mut stdin = command.stdin.take().expect("Faild to take stdin");
+    let mut stdin = command.stdin.take().expect("Failed to take stdin");
     stdin
         .write_all(input.as_bytes())
-        .expect("Faild to write to stdin");
+        .expect("Failed to write to stdin");
 
     // 关闭stdin写端并向其发送EOF，避免cat无限等待
     drop(stdin);
@@ -112,9 +112,9 @@ pub fn pipe_through_cat(input: &str) -> String {
     let mut output = String::new();
     stdout
         .read_to_string(&mut output)
-        .expect("Faild to read stdout");
+        .expect("Failed to read stdout");
 
-    command.wait().expect("Faild to wait cat process");
+    command.wait().expect("Failed to wait cat process");
     output
 }
 
@@ -199,7 +199,25 @@ pub fn pipe_through_grep(pattern: &str, input: &str) -> String {
     // TODO: Drop stdin to close pipe
     // TODO: Read output from child stdout line by line
     // TODO: Collect and return matching lines
-    todo!()
+    let mut child_process = Command::new("grep")
+        .args([pattern])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to create grep process");
+
+    let mut stdin = child_process.stdin.take().expect("Failed to take stdin");
+    stdin
+        .write_all(input.as_bytes())
+        .expect("Failed to write stdin");
+    drop(stdin);
+
+    let mut stdout = child_process.stdout.take().expect("Failed to take stdout");
+    let mut output = String::new();
+    stdout
+        .read_to_string(&mut output)
+        .expect("Failed to read stdout");
+    output
 }
 
 #[cfg(test)]
