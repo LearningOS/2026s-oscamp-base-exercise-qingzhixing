@@ -73,7 +73,18 @@ pub fn x86_64_abi() -> SyscallABI {
 pub fn aarch64_abi() -> SyscallABI {
     // TODO: Fill in the aarch64 syscall ABI
     // Hint: aarch64 uses the "svc #0" instruction, syscall number in x8
-    todo!()
+    SyscallABI {
+        arch: "aarch64",
+        instruction: "svc #0",
+        id_reg: "x8",
+        ret_reg: "x0",
+        arg_regs: &["x0", "x1", "x2", "x3", "x4", "x5"],
+        clobbered: &[],
+        sys_write: 64,
+        sys_read: 63,
+        sys_close: 57,
+        sys_exit: 93,
+    }
 }
 
 /// Return the riscv64 Linux syscall ABI description
