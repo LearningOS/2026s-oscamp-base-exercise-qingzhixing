@@ -121,7 +121,17 @@ pub unsafe fn syscall3(id: usize, arg0: usize, arg1: usize, arg2: usize) -> isiz
     //   - inlateout("rax") id => ret
     //   - in("rdi") arg0, in("rsi") arg1, in("rdx") arg2
     //   - out("rcx") _, out("r11") _
-    todo!()
+    let ret: isize;
+    core::arch::asm!(
+        "syscall",
+        inlateout("rax") id => ret,
+        in("rdi") arg0,
+        in("rsi") arg1,
+        in("rdx") arg2,
+        out("rcx") _,
+        out("r11") _,
+    );
+    ret
 }
 
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
@@ -132,7 +142,15 @@ pub unsafe fn syscall3(id: usize, arg0: usize, arg1: usize, arg2: usize) -> isiz
     //   - in("x8") id
     //   - inlateout("x0") arg0 => ret
     //   - in("x1") arg1, in("x2") arg2
-    todo!()
+    let ret: isize;
+    core::arch::asm!(
+        "svc #0",
+        in("x8") id
+        inlateout("x0") arg0 => ret
+        in("x1") arg1,
+        in("x2") arg2
+    );
+    ret
 }
 
 // Non-Linux platforms: provide a stub so the code compiles
@@ -173,25 +191,28 @@ const NATIVE_SYS_EXIT: usize = 0;
 /// Write data from `buf` to file descriptor `fd`.
 pub fn sys_write(fd: usize, buf: &[u8]) -> isize {
     // TODO: Call syscall3 to implement write
-    todo!()
+    unsafe { syscall3(NATIVE_SYS_WRITE, fd, buf.as_ptr() as usize, buf.len()) }
 }
 
 /// Read data from file descriptor `fd` into `buf`.
 pub fn sys_read(fd: usize, buf: &mut [u8]) -> isize {
     // TODO: Call syscall3 to implement read
-    todo!()
+    unsafe { syscall3(NATIVE_SYS_READ, fd, buf.as_mut_ptr() as usize, buf.len()) }
 }
 
 /// Close file descriptor `fd`.
 pub fn sys_close(fd: usize) -> isize {
     // TODO: Call syscall3 to implement close
-    todo!()
+    unsafe { syscall3(NATIVE_SYS_CLOSE, fd, 0, 0) }
 }
 
 /// Terminate the current process.
 pub fn sys_exit(code: i32) -> ! {
     // TODO: Call syscall3 to implement exit
-    todo!()
+    unsafe {
+        syscall3(NATIVE_SYS_EXIT, code as usize, 0, 0);
+    }
+    panic!("Shouldn't run to this line after sys_exit");
 }
 
 // ============================================================
