@@ -91,7 +91,18 @@ pub fn aarch64_abi() -> SyscallABI {
 pub fn riscv64_abi() -> SyscallABI {
     // TODO: Fill in the riscv64 syscall ABI
     // Hint: riscv64 uses the "ecall" instruction, syscall number in a7
-    todo!()
+    SyscallABI {
+        arch: "aarch64",
+        instruction: "ecall",
+        id_reg: "a7",
+        ret_reg: "a0",
+        arg_regs: &["a0", "a1", "a2", "a3", "a4", "a5"],
+        clobbered: &[],
+        sys_write: 64,
+        sys_read: 63,
+        sys_close: 57,
+        sys_exit: 93,
+    }
 }
 
 // ============================================================
