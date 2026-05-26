@@ -51,13 +51,13 @@ pub struct FdTable {
     // TODO: Design the internal structure
     // Hint: use Vec<Option<Arc<dyn File>>>
     //       the index is the fd number, None means the fd is closed or unallocated
+    data: Vec<Option<Arc<dyn File>>>,
 }
 
 impl FdTable {
     /// Create an empty fd table
     pub fn new() -> Self {
-        // TODO
-        todo!()
+        FdTable { data: vec![] }
     }
 
     /// Allocate a new fd, return the fd number.
@@ -65,7 +65,24 @@ impl FdTable {
     /// Prefers reusing the smallest closed fd number; if no free slot, appends to the end.
     pub fn alloc(&mut self, file: Arc<dyn File>) -> usize {
         // TODO
-        todo!()
+        // Find one empty fd
+        let mut empty_fd_idx: Option<usize> = None;
+        let _ = self.data.iter().enumerate().try_for_each(|(index, fd)| {
+            if fd.is_none() {
+                empty_fd_idx = Some(index);
+                return Err(());
+            }
+            Ok(())
+        });
+        // If find one, put the file ptr into it
+        // Else push one
+        if let Some(index) = empty_fd_idx {
+            self.data[index] = Some(Arc::clone(&file));
+            index
+        } else {
+            self.data.push(Some(Arc::clone(&file)));
+            self.data.len() - 1
+        }
     }
 
     /// Get the file object for an fd. Returns None if the fd doesn't exist or is closed.
