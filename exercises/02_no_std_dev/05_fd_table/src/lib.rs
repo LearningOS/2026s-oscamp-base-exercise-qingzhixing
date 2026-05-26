@@ -38,7 +38,7 @@
 //! - fd number reuse strategy (find smallest free slot)
 //! - `Arc` reference counting and resource release
 
-use std::sync::Arc;
+use std::{sync::Arc, thread::sleep};
 
 /// File abstraction trait — all "files" in the kernel (regular files, pipes, sockets) implement this
 pub trait File: Send + Sync {
@@ -88,7 +88,11 @@ impl FdTable {
     /// Get the file object for an fd. Returns None if the fd doesn't exist or is closed.
     pub fn get(&self, fd: usize) -> Option<Arc<dyn File>> {
         // TODO
-        todo!()
+        if fd >= self.data.len() {
+            None
+        } else {
+            self.data[fd].clone()
+        }
     }
 
     /// Close an fd. Returns true on success, false if the fd doesn't exist or is already closed.
