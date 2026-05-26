@@ -98,13 +98,18 @@ impl FdTable {
     /// Close an fd. Returns true on success, false if the fd doesn't exist or is already closed.
     pub fn close(&mut self, fd: usize) -> bool {
         // TODO
-        todo!()
+        if fd >= self.data.len() {
+            false
+        } else {
+            self.data[fd] = None;
+            true
+        }
     }
 
     /// Return the number of currently allocated fds (excluding closed ones)
     pub fn count(&self) -> usize {
         // TODO
-        todo!()
+        self.data.iter().filter(|item| !item.is_none()).count()
     }
 }
 
