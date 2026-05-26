@@ -60,7 +60,7 @@ pub fn x86_64_abi() -> SyscallABI {
         instruction: "syscall",
         id_reg: "rax",
         ret_reg: "rax",
-        arg_regs: &["rdi", "rsi", "rdx", "r10", " r8", "r9"],
+        arg_regs: &["rdi", "rsi", "rdx", "r10", "r8", "r9"],
         clobbered: &["rcx", "r11"],
         sys_write: 1,
         sys_read: 0,
