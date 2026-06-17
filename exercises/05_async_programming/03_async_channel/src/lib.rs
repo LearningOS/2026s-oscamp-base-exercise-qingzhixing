@@ -7,6 +7,8 @@
 //! - Async `send` and `recv`
 //! - Channel closing mechanism (receiver returns None after all senders are dropped)
 
+use std::path::Component::ParentDir;
+
 use tokio::sync::mpsc;
 
 /// Async producer-consumer:
@@ -38,7 +40,7 @@ pub async fn producer_consumer(items: Vec<String>) -> Vec<String> {
         result
     });
 
-    let (_, consumer_result) = tokio::join!(producer, consumer);
+    let (_producer_result, consumer_result) = tokio::join!(producer, consumer);
     consumer_result.unwrap()
 }
 
@@ -51,7 +53,27 @@ pub async fn fan_in(n_producers: usize) -> Vec<String> {
     //       Each sends format!("producer {id}: message")
     // TODO: Drop the original sender (important! otherwise channel won't close)
     // TODO: Consumer loops receiving, collects and sorts
-    todo!()
+    let (tx, mut rx) = mpsc::channel(n_producers);
+
+    let _producers: Vec<_> = (0..n_producers)
+        .map(|id| {
+            let tx = tx.clone();
+            tokio::spawn(async move { tx.send(format!("producer {id}: message")).await.ok() })
+        })
+        .collect();
+
+    drop(tx);
+
+    let consumer = tokio::spawn(async move {
+        let mut result = vec![];
+        while let Some(msg) = rx.recv().await {
+            result.push(msg);
+        }
+        result.sort();
+        result
+    });
+
+    consumer.await.unwrap()
 }
 
 #[cfg(test)]
