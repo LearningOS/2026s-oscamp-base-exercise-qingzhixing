@@ -103,7 +103,7 @@ impl Sv39PageTable {
     /// 提示：右移 (12 + level * 9) 位，然后与 0x1FF 做掩码。
     pub fn extract_vpn(va: u64, level: usize) -> usize {
         // TODO: 从虚拟地址中提取指定级别的 VPN 索引
-        todo!()
+        ((va >> (12 + level * 9)) & 0x1ff) as usize
     }
 
     /// 建立从虚拟页到物理页的映射（4KB 页）。
@@ -119,7 +119,41 @@ impl Sv39PageTable {
         // 对于中间层级（level 2 和 level 1），如果对应 VPN 的页表项（PTE）无效（PTE_V == 0），
         // 则需要分配一个新的页表节点（使用 alloc_node），并将新节点的 PPN 写入当前 PTE（仅设置 PTE_V 标志）。
         // 最后在 level 0 的 PTE 中写入目标物理页号（pa >> 12）和 flags。
-        todo!()
+
+        // 当前页表所在的物理地址
+        let mut current_page_table_ppn = self.root_ppn;
+
+        for level in (0..=2).rev() {
+            // 获取当前层页表的vpn
+            let vpn = Self::extract_vpn(va, level);
+
+            if level == 0 {
+                // 当前为最底层页表，当前页表项负责存储 ppn 还有 flag
+                let current_page_table = self
+                    .nodes
+                    .get_mut(&current_page_table_ppn)
+                    .expect("Invalid page table node.");
+                current_page_table.entries[vpn] = (pa >> 12) | flags;
+            } else {
+                let current_page_table = &self.nodes[&current_page_table_ppn];
+                let current_pte = current_page_table.entries[vpn];
+
+                // 当前页表项管理的是下一级页表，要从中提取下一级页表的ppn
+                if (current_pte & PTE_V) == 0 {
+                    // 如果当前页表项无效，则分配一个新的页表节点
+                    let new_ppn = self.alloc_node();
+                    // 写入该节点
+                    self.nodes
+                        .get_mut(&current_page_table_ppn)
+                        .expect("Invalid page table node.")
+                        .entries[vpn] = (new_ppn << PPN_SHIFT) | PTE_V;
+                    current_page_table_ppn = new_ppn;
+                } else {
+                    // 有效则提取下一级页表的ppn
+                    current_page_table_ppn = current_pte >> PPN_SHIFT;
+                }
+            }
+        }
     }
 
     /// 遍历三级页表，将虚拟地址翻译为物理地址。
