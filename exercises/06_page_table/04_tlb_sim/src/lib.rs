@@ -123,7 +123,32 @@ impl Tlb {
         //       if entry.valid && entry.vpn == vpn && entry.asid == asid { 更新并返回 }
         //   }
         //   写入 fifo_ptr 位置，然后推进指针
-        todo!()
+        let result = self
+            .entries
+            .iter_mut()
+            .find(|tlb_entry| tlb_entry.valid && tlb_entry.vpn == vpn && tlb_entry.asid == asid);
+
+        match result {
+            Some(entry) => {
+                *entry = TlbEntry {
+                    valid: true,
+                    asid,
+                    vpn,
+                    ppn,
+                    flags,
+                };
+            }
+            None => {
+                self.entries[self.fifo_ptr] = TlbEntry {
+                    valid: true,
+                    asid,
+                    vpn,
+                    ppn,
+                    flags,
+                };
+                self.fifo_ptr = (self.fifo_ptr + 1) % self.capacity;
+            }
+        }
     }
 
     /// 刷新整个 TLB（将所有条目标记为无效）。
