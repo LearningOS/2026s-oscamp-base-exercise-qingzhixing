@@ -93,13 +93,23 @@ impl<T> RwLock<T> {
         self.state.fetch_or(WRITER_WAITING, Ordering::Release);
         loop {
             let state = self.state.load(Ordering::Acquire);
+
+            // 有 读者 或 持有者 -> 继续等待
             if (state & READER_MASK != 0) || (state & WRITER_HOLDING != 0) {
                 spin_loop();
                 continue;
             }
+
+            // 此时状态应该仅为 0 或 WRITER_WAITING
+            if state & WRITER_WAITING == 0 {
+                // 等待位被其他写者清除，重新设置
+                self.state.fetch_or(WRITER_WAITING, Ordering::Release);
+                continue;
+            }
+
             match self
                 .state
-                .compare_exchange(WRITER_WAITING, WRITER_HOLDING, AcqRel, Acquire)
+                .compare_exchange(state, WRITER_HOLDING, AcqRel, Acquire)
             {
                 Ok(_) => return RwLockWriteGuard { lock: self },
                 Err(_) => continue,
