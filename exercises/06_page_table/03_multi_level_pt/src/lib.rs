@@ -133,7 +133,7 @@ impl Sv39PageTable {
                     .nodes
                     .get_mut(&current_page_table_ppn)
                     .expect("Invalid page table node.");
-                current_page_table.entries[vpn] = (pa >> 12) | flags;
+                current_page_table.entries[vpn] = ((pa >> 12) << PPN_SHIFT) | flags;
             } else {
                 let current_page_table = &self.nodes[&current_page_table_ppn];
                 let current_pte = current_page_table.entries[vpn];
@@ -175,7 +175,32 @@ impl Sv39PageTable {
         // 如果 PTE 是叶节点（即 R、W、X 标志位中有至少一个被置位），则可以直接使用该 PTE 中的物理页号（PPN）计算最终的物理地址。
         // 否则，该 PTE 指向下一级页表节点，继续遍历下一级。
         // 遍历到 level 0 时，PTE 必须是叶节点。
-        todo!()
+        let mut current_pt_ppn = self.root_ppn;
+
+        for level in (0..=2).rev() {
+            let vpn = Self::extract_vpn(va, level);
+            let current_pt = self.nodes.get(&current_pt_ppn).expect("Missing page table");
+            let pte = current_pt.entries[vpn];
+
+            // 判断pte是否有效
+            if (pte & PTE_V) == 0 {
+                return TranslateResult::PageFault;
+            }
+
+            // 判断是否是叶节点
+            if (pte & (PTE_R | PTE_W | PTE_X)) != 0 {
+                let ppn = pte >> PPN_SHIFT;
+                let offset = va & ((1 << (12 + 9 * level)) - 1);
+                let pa = (ppn << 12) | offset;
+                return TranslateResult::Ok(pa);
+            }
+
+            // 进入下一层查询
+            current_pt_ppn = pte >> PPN_SHIFT;
+        }
+
+        // level 0 不是叶子
+        TranslateResult::PageFault
     }
 
     /// 建立大页映射（2MB superpage，在 level 1 设叶子 PTE）。
