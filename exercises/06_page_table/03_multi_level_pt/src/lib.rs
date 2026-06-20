@@ -219,7 +219,35 @@ impl Sv39PageTable {
         // 你需要在 level 2 找到或创建中间页表节点，然后在 level 1 写入叶子 PTE。
         // 注意大页的物理页号计算方式与普通页相同（pa >> 12），
         // 但翻译时 offset 包含虚拟地址的低 21 位（VPN[0] 部分 + 12 位页内偏移）。
-        todo!()
+        let mut current_pt_ppn = self.root_ppn;
+
+        for level in (1..=2).rev() {
+            let vpn = Self::extract_vpn(va, level);
+
+            // 需要写入
+            if level == 1 {
+                let current_pt = self
+                    .nodes
+                    .get_mut(&current_pt_ppn)
+                    .expect("Missing page table");
+                let pte = &mut current_pt.entries[vpn];
+                *pte = ((pa >> 12) << PPN_SHIFT) | flags;
+            } else {
+                // 进入下一层
+                let current_pt = self.nodes.get(&current_pt_ppn).expect("Missing page table");
+                let pte = &current_pt.entries[vpn];
+
+                if ((*pte) & PTE_V) == 0 {
+                    // 非法页表项，需要分配新的页表节点
+                    let new_ppn = self.alloc_node();
+                    self.nodes.get_mut(&current_pt_ppn).unwrap().entries[vpn] =
+                        (new_ppn << PPN_SHIFT) | PTE_V;
+                    current_pt_ppn = new_ppn;
+                } else {
+                    current_pt_ppn = (*pte) >> 12;
+                }
+            }
+        }
     }
 }
 
