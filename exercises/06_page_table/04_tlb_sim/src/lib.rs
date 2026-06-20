@@ -186,7 +186,10 @@ impl Tlb {
     /// 返回当前有效条目的数量。
     pub fn valid_count(&self) -> usize {
         // TODO: 统计 valid == true 的条目数
-        todo!()
+        self.entries
+            .iter()
+            .filter(|entry| entry.valid == true)
+            .count()
     }
 }
 
