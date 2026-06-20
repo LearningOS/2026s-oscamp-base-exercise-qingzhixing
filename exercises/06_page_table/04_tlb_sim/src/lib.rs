@@ -156,7 +156,9 @@ impl Tlb {
     /// 这对应于 RISC-V 的 `sfence.vma`（不带参数）操作。
     pub fn flush_all(&mut self) {
         // TODO: 将所有条目的 valid 设为 false
-        todo!()
+        self.entries
+            .iter_mut()
+            .for_each(|entry| entry.valid = false);
     }
 
     /// 刷新指定虚拟页的 TLB 条目。
@@ -164,7 +166,10 @@ impl Tlb {
     /// 对应 `sfence.vma vaddr`：只刷新匹配 `vpn` 的条目（任意 ASID）。
     pub fn flush_by_vpn(&mut self, vpn: u64) {
         // TODO: 将所有 vpn 匹配的条目标记为无效
-        todo!()
+        self.entries
+            .iter_mut()
+            .filter(|entry| entry.vpn == vpn)
+            .for_each(|entry| entry.valid = false);
     }
 
     /// 刷新指定地址空间（ASID）的所有 TLB 条目。
