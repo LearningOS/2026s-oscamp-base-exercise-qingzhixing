@@ -177,7 +177,10 @@ impl Tlb {
     /// 对应 `sfence.vma zero, asid`：刷新该 ASID 的所有条目。
     pub fn flush_by_asid(&mut self, asid: u16) {
         // TODO: 将所有 asid 匹配的条目标记为无效
-        todo!()
+        self.entries
+            .iter_mut()
+            .filter(|entry| entry.asid == asid)
+            .for_each(|entry| entry.valid = false);
     }
 
     /// 返回当前有效条目的数量。
