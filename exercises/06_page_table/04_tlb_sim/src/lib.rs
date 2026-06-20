@@ -245,7 +245,30 @@ impl Mmu {
     /// 5. 页表未命中 → 返回 None（缺页）
     pub fn translate(&mut self, vpn: u64) -> Option<u64> {
         // TODO: 实现 TLB + 页表的二级查找
-        todo!()
+        let tlb_rsult = self.tlb.lookup(vpn, self.current_asid);
+        if let Some(ppn) = tlb_rsult {
+            // tlb 命中
+            return Some(ppn);
+        }
+
+        // tlb 未命中
+        let page_table_result = self
+            .page_table
+            .iter()
+            .find(|(asid, mapping)| *asid == self.current_asid && mapping.vpn == vpn);
+
+        match page_table_result {
+            Some((_, mapping)) => {
+                // 页表命中，回填 TLB
+                self.tlb
+                    .insert(vpn, mapping.ppn, self.current_asid, mapping.flags);
+                Some(mapping.ppn)
+            }
+            None => {
+                // 页表未命中，缺页
+                None
+            }
+        }
     }
 }
 
