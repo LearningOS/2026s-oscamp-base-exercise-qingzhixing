@@ -91,7 +91,22 @@ impl Tlb {
         // TODO: 遍历 self.entries，查找 valid && vpn 匹配 && asid 匹配的条目
         // 命中：self.stats.hits += 1，返回 Some(entry.ppn)
         // 未命中：self.stats.misses += 1，返回 None
-        todo!()
+
+        let result = self
+            .entries
+            .iter()
+            .find(|tlb_entry| tlb_entry.valid && tlb_entry.vpn == vpn && tlb_entry.asid == asid);
+
+        match result {
+            Some(entry) => {
+                self.stats.hits += 1;
+                Some(entry.ppn)
+            }
+            None => {
+                self.stats.misses += 1;
+                None
+            }
+        }
     }
 
     /// 将一条新映射插入 TLB。
